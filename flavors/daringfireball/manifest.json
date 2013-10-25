@@ -1,0 +1,9 @@
+{
+	name: '# Daring Fireball Markdown syntax.',
+	author: 'John Gruber',
+	contacts: '',
+	github: '',
+	description: 'Official syntax from [John Gruber](http://daringfireball.net/projects/markdown/syntax) You also could check out [online parser](http://daringfireball.net/projects/markdown/dingus)',
+	specificationUrl: 'http://daringfireball.net/projects/markdown/syntax',
+	fileExtentions: ['md', 'markdown'],
+}
