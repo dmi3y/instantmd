@@ -1,6 +1,6 @@
 /*jshint globalstrict: true*/
 /*global require*/
-
+/* nodeJs starting poing */
 'use strict';
 
 var
@@ -9,7 +9,8 @@ var
 requirejs.config({
 	baseUrl: 'parser',
 	paths: {
-	    flavors: '../flavors'
+	    flavors: '../flavors',
+	    rsvp: '../node_modules/rsvp/dist/rsvp-2.0.4.amd'
 	}
 });
 

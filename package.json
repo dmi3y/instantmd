@@ -1,0 +1,14 @@
+{
+  "name": "instantmd",
+  "version": "0.0.1",
+  "author": "Dmitrii Lapshukov <lapshukov@gmail.com>",
+  "description": "Instand markdown",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:dmi3y/instantmd.git"
+  }, 
+  "dependencies": {
+    "requirejs": "~2.1.8",
+    "rsvp": "~2.0.4"
+  }
+}
