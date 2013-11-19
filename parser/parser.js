@@ -36,6 +36,11 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 	 * @return {str}               html parsed string from md
 	 */
 	function andShakeWith(flavorDetails){
+		var
+			position = 0,
+			blocks = flavorDetails.rules.blocks,
+			arrayOfPromises = [];
+
 		/**
 		 * Stack found blocks into object of promises
 		 * @param  {str} blockName
@@ -64,13 +69,11 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 		 */
 		(function checkLine() {
 			var
-				blocks = flavorDetails.rules.blocks,
-				mdline, position = 0,
+				mdline,
 				blockRules,
 				blockRule,
 				blockName,
-				blockRuleIx, offset,
-				arrayOfPromises = [];
+				blockRuleIx, offset;
 
 			for (blockName in blocks) {
 				blockRules = blocks[blockName];
@@ -88,8 +91,8 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 						}
 
 						if ( container.linesOrig > position ) {
-							checkLine();
 							position += 1;
+							checkLine();
 						}
 					}
 				}
@@ -112,7 +115,9 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 			flavorDetails = flavor + 'details';
 
 		requirejs([flavorDetails],
-			andShakeWith(flavorDetails)
+			function ( flavorDetails ) {
+				andShakeWith(flavorDetails);
+			}
 		);
 	}
 
