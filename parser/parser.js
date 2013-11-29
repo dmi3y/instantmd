@@ -8,7 +8,7 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 		container = {},
 		tree = [];
 	/**
-	 * Chekcks if line fits the block rule
+	 * Checks if line fits the block rule
 	 * @param  {mix}  blockRule function or regExp
 	 * @param  {str}  l         line of md
 	 * @return {Boolean}
@@ -31,7 +31,7 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 	}
 	/**
 	 * Mixing up the promises instead of 
-	 * callback hell
+	 * callback nested hell
 	 * @param  {obj} flavorDetails parser details
 	 * @return {str}               html parsed string from md
 	 */
@@ -56,6 +56,7 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 				requirejs([blockParser],
 					function growTree(blockParser) {
 						blockParser(blockRules, position, offset, container, tree);
+						resolve(tree);
 					}
 				);
 
@@ -99,10 +100,11 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 			}
 		})();
 
-		RSVP.all(arrayOfPromises).then(function shakeTree () {
-			tree;
+		RSVP.all(arrayOfPromises)
+			.then(function shakeTree () {
+				tree = tree;
 
-		});
+			});
 	}
 
 	/**

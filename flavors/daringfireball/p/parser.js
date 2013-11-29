@@ -9,9 +9,16 @@
 'use strict';
 
 define(function(){
-	function getP( l, container, tree, j ) {
-		tree.push(l);
+	function p( blockRules, position, offset, container, tree ) {
+		tree[position] = '<p>' + container.splitted[position] + '</p>';
+		var
+			splitted = container.splitted.slice(position),
+			len = splitted.length;
+
+		for (;len--;) {
+			
+		}
 
 	}
-	return getP;
+	return p;
 });
