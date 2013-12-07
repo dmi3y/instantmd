@@ -9,25 +9,25 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 		tree = [];
 	/**
 	 * Checks if line fits the block rule
-	 * @param  {mix}  blockRule function or regExp
+	 * @param  {mix}  lineRules function or regExp
 	 * @param  {str}  l         line of md
 	 * @return {Boolean}
 	 */
-	function isLineFits(blockRule, l) {
+	function isLineFits(lineRules, l) {
 		var
-			bri = 0, brl = blockRule.length, brix,
-			test = false;
+			lineRuleIx = lineRules.length, lineRule,
+			test, result;
 
-		for ( bri; bri < brl; bri++ ) {
-			brix = blockRule[bri];
-			if ( utils.isRegExp(brix) ) {
-				test = brix.test(l);
+		for ( ;lineRuleIx--; ) {
+			lineRule = lineRules[lineRuleIx];
+			if ( utils.isRegExp(lineRule) ) {
+				test = lineRule.test(l);
 			} else {
-				test = brix(l);
+				test = lineRule(l);
 			}
-			if ( test ) break;
+			result = ((typeof result === 'boolean')? (result && test): test);
 		}
-		return test;
+		return result;
 	}
 	/**
 	 * Mixing up the promises instead of 
@@ -38,7 +38,7 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 	function andShakeWith(flavorDetails){
 		var
 			position = 0,
-			blocks = flavorDetails.rules.blocks,
+			rulesBlocks = flavorDetails.rules.blocks,
 			arrayOfPromises = [];
 
 		/**
@@ -68,35 +68,37 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 		/**
 		 * Recurcive line checker
 		 */
-		(function checkLine() {
+		(function assignParsers() {
 			var
 				mdline,
 				blockRules,
-				blockRule,
+				lineRules,
 				blockName,
 				blockRuleIx, offset;
 
-			for (blockName in blocks) {
-				blockRules = blocks[blockName];
+			for (blockName in rulesBlocks) {
+				blockRules = rulesBlocks[blockName];
 
-				for (blockRuleIx in blockRules.test) {
+				for (blockRuleIx in blockRules.test) { // ARRAY @TODO think of use other type iterators
 					offset = position + parseInt(blockRuleIx, 10);
 					mdline = container.splitted[offset];
 
 					if ( utils.isNotBlank(mdline) ) {
-						blockRule = blockRules.test[blockRuleIx];
+						lineRules = blockRules.test[blockRuleIx];
 						
-						if ( isLineFits(blockRule, mdline) ) {
+						if ( isLineFits(lineRules, mdline) ) {
 							arrayOfPromises.push(parseDownWith(blockName, blockRules, position, offset));
-							delete blocks[blockName];
-						}
-
-						if ( container.linesOrig > position ) {
 							position += 1;
-							checkLine();
+							delete rulesBlocks[blockName];
+							break;
 						}
 					}
 				}
+			}
+
+			if ( container.linesOrig > position ) {
+				position += 1;
+				assignParsers();
 			}
 		})();
 

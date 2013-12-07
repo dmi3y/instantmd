@@ -5,17 +5,19 @@
 
 define(['utils'], function(utils) {
 	function isList( test ) {
-		return (/^\s*(\d\.|[\*\-\+])\s/).test(test);
+		var result = (/^\s*(\d\.|[\*\-\+])\s/).test(test);
+		return result;
 	}
 	function isNotList( test ) {
-		return !isList(test);
+		var result = !isList(test);
+		return result;
 	}
 	return {
 		rules: {
 			blocks: {
-				p: {
+				blockquote: {
 					test: {
-						0: [utils.doesNotStartWith(['#','>','*','+','-']),isNotList]
+						0: [utils.startsWith('>')]
 					}
 				},
 				h: {
@@ -34,9 +36,9 @@ define(['utils'], function(utils) {
 						0: [isList]
 					}
 				},
-				blockquote: {
+				p: {
 					test: {
-						0: [utils.startsWith('<')]
+						0: [utils.doesNotStartWith(['#','>','*','+','-']),isNotList]
 					}
 				}
 			},
