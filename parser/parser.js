@@ -37,7 +37,6 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 	 */
 	function andShakeWith(flavorDetails){
 		var
-			position = 0,
 			rulesBlocks = flavorDetails.rules.blocks,
 			arrayOfPromises = [];
 
@@ -71,34 +70,43 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 		(function assignParsers() {
 			var
 				mdline,
+				mdlinesLen = container.splitted.length,
+				position = 0,
 				blockRules,
 				lineRules,
 				blockName,
-				blockRuleIx, offset;
+				blockRuleIx = 0,
+				offset,
+				startover = false;
 
-			for (blockName in rulesBlocks) {
-				blockRules = rulesBlocks[blockName];
+			for ( position; mdlinesLen > position; position++ ) {
+				mdline = container.splitted[position];
 
-				for (blockRuleIx in blockRules.test) { // ARRAY @TODO think of use other type iterators
-					offset = position + parseInt(blockRuleIx, 10);
-					mdline = container.splitted[offset];
+				if ( utils.isNotBlank(mdline) ) {
+					for (blockName in rulesBlocks) {
 
-					if ( utils.isNotBlank(mdline) ) {
-						lineRules = blockRules.test[blockRuleIx];
-						
-						if ( isLineFits(lineRules, mdline) ) {
-							arrayOfPromises.push(parseDownWith(blockName, blockRules, position, offset));
-							position += 1;
-							delete rulesBlocks[blockName];
+						if ( startover ) {
+							startover = false;
 							break;
+						}
+
+						blockRules = rulesBlocks[blockName];
+
+						for ( blockRuleIx in blockRules.test ) {
+
+							offset = position + parseInt(blockRuleIx, 10);
+
+								lineRules = blockRules.test[blockRuleIx];
+								
+								if ( isLineFits(lineRules, mdline) ) {
+									arrayOfPromises.push(parseDownWith(blockName, blockRules, position, offset));
+									delete rulesBlocks[blockName];
+									startover = true;
+									break;
+								}
 						}
 					}
 				}
-			}
-
-			if ( container.linesOrig > position ) {
-				position += 1;
-				assignParsers();
 			}
 		})();
 
