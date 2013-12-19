@@ -38,7 +38,8 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 	function andShakeWith(flavorDetails){
 		var
 			rulesBlocks = flavorDetails.rules.blocks,
-			arrayOfPromises = [];
+			parsersPool = {},
+			hashOfPromises = {};
 
 		/**
 		 * Stack found blocks into object of promises
@@ -47,27 +48,52 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 		 * @param  {[type]} blockRules [description]
 		 * @return {[type]}            [description]
 		 */
-		function parseDownWith(blockName, blockRules, position, offset) {
-			var blockParsePromise = new RSVP.Promise(function (resolve, reject) {
-				var
-					blockParser = config.flavor + blockName + '/parser';
+		function parseDownWith(blockName, position, offset) {
 
-				requirejs([blockParser],
-					function growTree(blockParser) {
-						blockParser(blockRules, position, offset, container, tree);
-						resolve(tree);
-					}
-				);
+			var
+				parserPool = parsersPool[blockName] || [];
 
-			});
+			parserPool.push({position: position, offset: offset});
 
-			return blockParsePromise;
+			parsersPool[blockName] = parserPool;
+		}
+
+		function formHashOfPromises () {
+			var
+				blockParsePromise,
+				blockName,
+				parserPool,
+				parsedmd;
+
+			for ( blockName in parsersPool ) {
+
+				parserPool = parsersPool[blockName];
+
+				blockParsePromise = new RSVP.Promise(function (resolve, reject) {
+					var
+						blockParser = config.flavor + blockName + '/parser';
+
+					requirejs([blockParser],
+						function growTree(blockParser) {
+							parsedmd = blockParser('abcabc');
+							tree.push(parsedmd);
+							resolve(tree);
+						}
+					);
+
+				});
+				hashOfPromises[blockName] = blockParsePromise;
+			}
+
+
+
 		}
 
 		/**
 		 * Recurcive line checker
 		 */
 		(function assignParsers() {
+			/*jshint maxcomplexity: 7*/
 			var
 				mdline,
 				mdlinesLen = container.splitted.length,
@@ -99,8 +125,7 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 								lineRules = blockRules.test[blockRuleIx];
 								
 								if ( isLineFits(lineRules, mdline) ) {
-									arrayOfPromises.push(parseDownWith(blockName, blockRules, position, offset));
-									delete rulesBlocks[blockName];
+									parseDownWith(blockName, position, offset);
 									startover = true;
 									break;
 								}
@@ -108,10 +133,11 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 					}
 				}
 			}
+			formHashOfPromises();
 		})();
 
-		RSVP.all(arrayOfPromises)
-			.then(function shakeTree () {
+		RSVP.hash(hashOfPromises)
+			.then(function shakeTree (el) {
 				tree = tree;
 
 			});

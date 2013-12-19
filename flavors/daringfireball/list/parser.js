@@ -9,16 +9,9 @@
 'use strict';
 
 define(function(){
-	function list( blockRules, position, offset, container, tree ) {
-		tree[position] = '<list>' + container.splitted[position] + '</list>';
-		var
-			splitted = container.splitted.slice(position),
-			len = splitted.length;
-
-		for (;len--;) {
-			
-		}
-
+	function list( mdline ) {
+		mdline = '<list>' + mdline + '</list>';
+		return mdline;
 	}
 	return list;
 });

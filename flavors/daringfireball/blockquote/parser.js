@@ -9,15 +9,9 @@
 'use strict';
 
 define(function(){
-	function blockquote( blockRules, position, offset, container, tree ) {
-		tree[position] = '<blockquote>' + container.splitted[position] + '</blockquote>';
-		var
-			splitted = container.splitted.slice(position),
-			len = splitted.length;
-
-		for (;len--;) {
-			
-		}
+	function blockquote( mdline ) {
+		mdline = '<blockquote>' + mdline + '</blockquote>';
+		return mdline;
 
 	}
 	return blockquote;

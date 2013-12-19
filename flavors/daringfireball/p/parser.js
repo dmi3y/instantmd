@@ -9,15 +9,9 @@
 'use strict';
 
 define(function(){
-	function p( blockRules, position, offset, container, tree ) {
-		tree[position] = '<p>' + container.splitted[position] + '</p>';
-		var
-			splitted = container.splitted.slice(position),
-			len = splitted.length;
-
-		for (;len--;) {
-			
-		}
+	function p( mdline ) {
+		mdline = '<p>' + mdline + '</p>';
+		return mdline;
 
 	}
 	return p;
