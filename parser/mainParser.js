@@ -6,36 +6,61 @@
 define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 	var
 		container = {},
+		mdlinesLen,
 		tree = [];
+
 	/**
 	 * Checks if line fits the block rule
 	 * @param  {mix}  lineRules function or regExp
 	 * @param  {str}  l         line of md
 	 * @return {Boolean}
 	 */
-	function isLineFits(lineRules, l) {
+	function isLineFitsAnyOf(lineRules, l) {
 		var
-			lineRuleIx = lineRules.length, lineRule,
-			test, result;
+			lineRuleIx = lineRules.length,
+			lineRule,
+			test,
+			result;
 
 		for ( ;lineRuleIx--; ) {
+
 			lineRule = lineRules[lineRuleIx];
 			if ( utils.isRegExp(lineRule) ) {
+
 				test = lineRule.test(l);
 			} else {
+
 				test = lineRule(l);
 			}
 			result = ((typeof result === 'boolean')? (result && test): test);
 		}
 		return result;
 	}
+
+	/**
+	 * Load markdown flawor from config
+	 * pass it further to pre-parser
+	 */
+	function getFlavor() {
+		var
+			flavor = config.flavor,
+			flavorDetails = flavor + 'details';
+
+		requirejs([flavorDetails],
+			function (flavorDetails) {
+
+				andShakeWith(flavorDetails);
+			}
+		);
+	}
+
 	/**
 	 * Mixing up the promises instead of 
 	 * callback nested hell
 	 * @param  {obj} flavorDetails parser details
 	 * @return {str}               html parsed string from md
 	 */
-	function andShakeWith(flavorDetails){
+	function andShakeWith(flavorDetails) {
 		var
 			rulesBlocks = flavorDetails.rules.blocks,
 			parsersPool = {},
@@ -49,55 +74,56 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 		 * @return {[type]}            [description]
 		 */
 		function parseDownWith(blockName, position, offset) {
-
 			var
 				parserPool = parsersPool[blockName] || [];
 
 			parserPool.push({position: position, offset: offset});
-
 			parsersPool[blockName] = parserPool;
 		}
 
-		function formHashOfPromises () {
+		function makeBlockParsePromise(blockName) {
+			var
+				blockParsePromise,
+				parsedmd;
+
+			blockParsePromise = new RSVP.Promise(function (resolve, reject) {
+				var
+					blockParser = config.flavor + blockName + '/parser';
+
+				requirejs([blockParser],
+					function growTree(blockParser) {
+
+						parsedmd = blockParser('abcabc');
+						tree.push(parsedmd);
+						resolve(tree);
+					}
+				);
+			});
+			return blockParsePromise;
+		}
+
+		function formHashOfPromises() {
 			var
 				blockParsePromise,
 				blockName,
-				parserPool,
-				parsedmd;
+				parserPool;
 
 			for ( blockName in parsersPool ) {
 
 				parserPool = parsersPool[blockName];
-
-				blockParsePromise = new RSVP.Promise(function (resolve, reject) {
-					var
-						blockParser = config.flavor + blockName + '/parser';
-
-					requirejs([blockParser],
-						function growTree(blockParser) {
-							parsedmd = blockParser('abcabc');
-							tree.push(parsedmd);
-							resolve(tree);
-						}
-					);
-
-				});
+				
+				blockParsePromise = makeBlockParsePromise(blockName);
 				hashOfPromises[blockName] = blockParsePromise;
 			}
-
-
-
 		}
 
 		/**
 		 * Recurcive line checker
 		 */
-		(function assignParsers() {
+		(function assignParsers(position) {
 			/*jshint maxcomplexity: 7*/
 			var
 				mdline,
-				mdlinesLen = container.splitted.length,
-				position = 0,
 				blockRules,
 				lineRules,
 				blockName,
@@ -105,58 +131,49 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 				offset,
 				startover = false;
 
-			for ( position; mdlinesLen > position; position++ ) {
-				mdline = container.splitted[position];
+			mdline = container.splitted[position];
 
-				if ( utils.isNotBlank(mdline) ) {
-					for (blockName in rulesBlocks) {
+			if ( utils.isNotBlank(mdline) ) {
+				for (blockName in rulesBlocks) {
 
-						if ( startover ) {
-							startover = false;
+					if ( startover ) {
+
+						startover = false;
+						break;
+					}
+
+					blockRules = rulesBlocks[blockName];
+
+					for ( blockRuleIx in blockRules.test ) {
+
+						offset = position + parseInt(blockRuleIx, 10);
+						lineRules = blockRules.test[blockRuleIx];
+						
+						if ( isLineFitsAnyOf(lineRules, mdline) ) {
+
+							parseDownWith(blockName, position, offset);
+							startover = true;
 							break;
-						}
-
-						blockRules = rulesBlocks[blockName];
-
-						for ( blockRuleIx in blockRules.test ) {
-
-							offset = position + parseInt(blockRuleIx, 10);
-
-								lineRules = blockRules.test[blockRuleIx];
-								
-								if ( isLineFits(lineRules, mdline) ) {
-									parseDownWith(blockName, position, offset);
-									startover = true;
-									break;
-								}
 						}
 					}
 				}
 			}
-			formHashOfPromises();
-		})();
+
+			if ( mdlinesLen > position ) {
+
+				position += 1;
+				assignParsers(position);
+			} else {
+
+				formHashOfPromises();
+			}
+		}(0));
 
 		RSVP.hash(hashOfPromises)
-			.then(function shakeTree (el) {
-				tree = tree;
+		.then(function shakeTree(el) {
 
-			});
-	}
-
-	/**
-	 * Load markdown flawor from config
-	 * pass it further to pre-parser
-	 */
-	function getFlavor () {
-		var
-			flavor = config.flavor,
-			flavorDetails = flavor + 'details';
-
-		requirejs([flavorDetails],
-			function ( flavorDetails ) {
-				andShakeWith(flavorDetails);
-			}
-		);
+			tree = tree;
+		});
 	}
 
 	/**
@@ -165,15 +182,19 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 	 * @param  {str} str  markdown string
 	 * @return {str} html HTML string
 	 */
-	function parseStr( str ) {
+	function parseStr(str) {
 		var
-			len, arr, html;
+			len,
+			arr,
+			html;
 
 		container.str = str;
 		arr = str.split(/\r|\n|\r\n/);
 		len = arr.length - 1;
 		container.linesOrig = len;
 		container.splitted = arr;
+
+		mdlinesLen = container.splitted.length;
 		html = getFlavor();
 		return html;
 	}
