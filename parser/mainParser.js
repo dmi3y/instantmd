@@ -159,9 +159,10 @@ define(['utils', 'rsvp', 'config'], function(utils, RSVP, config) {
 				}
 			}
 
+			position += 1;
+			
 			if ( mdlinesLen > position ) {
 
-				position += 1;
 				assignParsers(position);
 			} else {
 
